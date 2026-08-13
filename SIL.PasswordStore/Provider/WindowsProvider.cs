@@ -23,15 +23,15 @@ namespace SIL.Secrets.Provider
 			if (string.IsNullOrEmpty(service))
 				throw new ArgumentNullException(nameof(service));
 
-			var passwordLength = string.IsNullOrEmpty(password)
+			var passwordByteLength = string.IsNullOrEmpty(password)
 				? 0
-				: (uint)Encoding.UTF8.GetBytes(password).Length + 1;
+				: Encoding.Unicode.GetByteCount(password);
 			var credential = new Credential {
 				Flags = 0,
 				Type = CredType.Generic,
 				TargetName = GetTargetName(service, user),
 				Comment = null,
-				CredentialBlobSize = passwordLength * 2,
+				CredentialBlobSize = (uint)passwordByteLength,
 				CredentialBlob = Marshal.StringToCoTaskMemUni(password),
 				Persist = CredPersist.LocalMachine,
 				AttributeCount = 0
@@ -56,9 +56,11 @@ namespace SIL.Secrets.Provider
 			{
 				using var credentialHandle = new CredentialHandle(credPtr);
 				var credential = credentialHandle.GetCredential();
-				return credential?.CredentialBlobSize == 0
-					? null
-					: Marshal.PtrToStringUni(credential?.CredentialBlob ?? IntPtr.Zero);
+				if (!credential.HasValue || credential.Value.CredentialBlobSize == 0)
+					return null;
+
+				var charCount = checked((int)(credential.Value.CredentialBlobSize / sizeof(char)));
+				return Marshal.PtrToStringUni(credential.Value.CredentialBlob, charCount);
 			}
 
 			var error = Marshal.GetLastWin32Error();
