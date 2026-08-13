@@ -108,6 +108,41 @@ like osx";
 		}
 
 		[Test]
+		public void GetSetPassword_NonLatinService()
+		{
+			var service = "ខ្មែរ";
+			PasswordStore.SetPassword(service, TestUser, TestPassword);
+
+			string password = null;
+			Assert.That(() => password = PasswordStore.GetPassword(service, TestUser), Throws
+				.Nothing);
+			Assert.That(password, Is.EqualTo(TestPassword));
+		}
+
+		[Test]
+		public void GetSetPassword_NonLatinUser()
+		{
+			var user = "ខ្មែរ";
+			PasswordStore.SetPassword(TestService, user, TestPassword);
+
+			string password = null;
+			Assert.That(() => password = PasswordStore.GetPassword(TestService, user), Throws
+				.Nothing);
+			Assert.That(password, Is.EqualTo(TestPassword));
+		}
+
+		[Test]
+		public void GetSetPassword_NonLatinPassword()
+		{
+			var expectedPassword = "Öខ្មែរ😀";
+			string password = null;
+			PasswordStore.SetPassword(TestService, TestUser, expectedPassword);
+			Assert.That(() => password = PasswordStore.GetPassword(TestService, TestUser),
+				Throws.Nothing);
+			Assert.That(password, Is.EqualTo(expectedPassword));
+		}
+
+		[Test]
 		public void DeletePassword_Existing()
 		{
 			// Setup
